@@ -12,7 +12,6 @@ dll_path = os.path.abspath(os.path.join(os.path.dirname(__file__), './owo/OWO.dl
 from System.Reflection import Assembly
 Assembly.UnsafeLoadFrom(dll_path)
 from OWOGame import OWO, SensationsFactory, Muscle, ConnectionState, GameAuth
-
 class OWOSuit:
     def __init__(self, config: Config, gui: Gui):
         self.config = config
@@ -46,24 +45,27 @@ class OWOSuit:
             self.gui.print_terminal(
                 "Interactions Continued.")
 
-    def create_sensation(self, parameter: str):
-        frequency = self.config.get_by_key("frequency") or 50
+    def AddMuscleToGroup(self, parameter, muscle, musclesToFire):
         intensities = self.config.get_by_key("intensities")
         intensity = intensities.get(parameter)
-        return SensationsFactory.Create(
-            frequency, .3, intensity, 0, 0, 0)
+        muscleWithIntensity = muscle.WithIntensity(intensity)
+        musclesToFire.append(muscleWithIntensity)
+        return musclesToFire
 
     def watch(self) -> None:
         while True:
             try:
                 if self.has_connected_already:
                     if len(self.active_muscles) > 0 and not self.is_paused:
+                        sensation =  SensationsFactory.Create(self.config.get_by_key("frequency") or 50, .3, 100, 0, 0, 0)
+                        musclesToFire = []
                         for muscle in self.active_muscles:
                             parameter = self.muscles_to_parameters.get(muscle)
                             self.gui.handle_active_muscle_update(
                                 parameter=parameter)
-                            sensation = self.create_sensation(parameter)
-                            OWO.Send(sensation, muscle)
+                            musclesToFire = self.AddMuscleToGroup(parameter, muscle,  musclesToFire)
+                        
+                        OWO.Send(sensation, musclesToFire)
                     if len(self.active_muscles) == 0:
                         self.gui.handle_active_muscle_reset()
             except RuntimeError:  # race condition for set changing during iteration
