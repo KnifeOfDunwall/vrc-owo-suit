@@ -70,7 +70,7 @@ class OWOSuit:
                         self.gui.handle_active_muscle_reset()
             except RuntimeError:  # race condition for set changing during iteration
                 pass
-            time.sleep(.3)
+            time.sleep(.2)
 
     def on_collission_enter(self, address: str, *args) -> None:
         if address not in self.osc_parameters:
